@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Energy-Based Vector Hysteresis Model in Magnetics</title>
+<meta name="description" content="An interactive explanation of the energy-based vector hysteresis model: dry-friction pinning, Weiss cells, the vector play operator and the resulting magnetisation loop.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
+<link rel="stylesheet" href="assets/css/main.css">
+<script defer src="vendor/katex/katex.min.js"></script>
+<script type="module" src="assets/js/app.js"></script>
+</head>
+<body>
+
+<header class="site-head">
+  <h1>Energy-Based Vector Hysteresis Model in Magnetics</h1>
+  <nav class="tabs" role="tablist" aria-label="Sections">
+    <button class="tab" role="tab" id="tab-model" data-view="model" aria-controls="view-model" aria-selected="true">Model</button>
+    <button class="tab" role="tab" id="tab-parameterization" data-view="parameterization" aria-controls="view-parameterization" aria-selected="false">Parameterization</button>
+    <button class="tab" role="tab" id="tab-resampling" data-view="resampling" aria-controls="view-resampling" aria-selected="false">Resampling</button>
+    <button class="tab" role="tab" id="tab-identification" data-view="identification" aria-controls="view-identification" aria-selected="false">Identification</button>
+  </nav>
+</header>
+
+<main>
+
+<!-- ─────────────────────────────  MODEL  ───────────────────────────── -->
+<section class="view" id="view-model" role="tabpanel" aria-labelledby="tab-model" tabindex="-1">
+
+  <p class="lede">
+    The energy-based model describes a magnetic material as a set of cells whose magnetisation is held back by
+    <em>dry friction</em>. The applied field splits into a reversible part that magnetises the material and an
+    irreversible part that is spent against pinning. Everything below is one state, drawn four ways &mdash;
+    move a slider and watch all four react together.
+  </p>
+
+  <div class="panel">
+
+    <!-- ── top row: friction analogy | Weiss cells ── -->
+    <div class="row row-top">
+
+      <figure class="card" id="card-friction">
+        <figcaption class="card-head">
+          <span class="card-title">1 &middot; Mechanical analogy</span>
+          <span class="seg" role="group" aria-label="Analogy view">
+            <button class="seg-btn is-on" data-mode="1d" aria-pressed="true">1&#8209;D</button>
+            <button class="seg-btn" data-mode="2d" aria-pressed="false">2&#8209;D</button>
+          </span>
+        </figcaption>
+        <div class="fig-host" id="friction-fig"></div>
+        <p class="note" id="friction-note"></p>
+      </figure>
+
+      <figure class="card" id="card-weiss">
+        <figcaption class="card-head">
+          <span class="card-title">2 &middot; Weiss cells</span>
+          <span class="card-sub">tile count &prop; &omega;<sub>k</sub>, defects &prop; &kappa;<sub>k</sub></span>
+        </figcaption>
+        <div class="fig-host" id="weiss-fig"></div>
+        <p class="note">
+          Each cell magnetises along its own reversible field, so a strongly pinned cell lags behind the applied
+          field. The material response is the weighted sum of the cells.
+        </p>
+      </figure>
+
+    </div>
+
+    <!-- ── equations ── -->
+    <div class="card" id="card-eq">
+      <div class="card-head"><span class="card-title">3 &middot; The model in six lines</span></div>
+
+      <ol class="eqs">
+        <li class="eq">
+          <div class="eq-tex" data-tex='\mathbf{H} = \mathbf{H}_{r,k} + \mathbf{H}_{i,k}'></div>
+          <p class="eq-cap">The field seen by cell <i>k</i> splits into a <b>reversible</b> part
+            <span class="tok tok-r">H<sub>r,k</sub></span> (the block&rsquo;s position &mdash; what actually magnetises it)
+            and an <b>irreversible</b> part <span class="tok tok-i">H<sub>i,k</sub></span> (the spring stretch &mdash;
+            what is spent on pinning).</p>
+        </li>
+        <li class="eq">
+          <div class="eq-tex" data-tex='\lVert\mathbf{H}_{i,k}\rVert \le \kappa_k \qquad \mathbf{H}_{i,k} = \kappa_k\,\frac{\dot{\mathbf{M}}_k}{\lVert\dot{\mathbf{M}}_k\rVert}\ \ \text{while slipping}'></div>
+          <p class="eq-cap">Coulomb friction: the pinning field can never exceed the pinning force
+            <i>&kappa;<sub>k</sub></i>. Below it the cell <b>sticks</b>; at it the cell <b>slips</b> and dissipates energy.</p>
+        </li>
+        <li class="eq">
+          <div class="eq-tex" data-tex='\mathbf{H}_{r,k}^{\,n} = \begin{cases} \mathbf{H}_{r,k}^{\,n-1}, & \lVert\mathbf{H}^{n}-\mathbf{H}_{r,k}^{\,n-1}\rVert \le \kappa_k \\[4pt] \mathbf{H}^{n} - \kappa_k\,\dfrac{\mathbf{H}^{n}-\mathbf{H}_{r,k}^{\,n-1}}{\lVert\mathbf{H}^{n}-\mathbf{H}_{r,k}^{\,n-1}\rVert}, & \text{otherwise} \end{cases}'></div>
+          <p class="eq-cap">The <b>vector play operator</b>: the state is dragged only as far as the boundary of the
+            ball of radius <i>&kappa;<sub>k</sub></i>. This one line is the whole memory of the material.</p>
+        </li>
+        <li class="eq">
+          <div class="eq-tex" data-tex='\mathbf{M}_{\mathrm{an}}(\mathbf{H}_r) = M_s\,\mathrm{L}\!\left(\frac{\lVert\mathbf{H}_r\rVert}{a}\right)\hat{\mathbf{H}}_r, \qquad \mathrm{L}(x)=\coth x-\frac{1}{x}'></div>
+          <p class="eq-cap">The reversible, single-valued <b>anhysteretic</b> response (Langevin). It is evaluated at
+            <span class="tok tok-r">H<sub>r,k</sub></span> &mdash; never at the applied field.</p>
+        </li>
+        <li class="eq">
+          <div class="eq-tex" data-tex='\mathbf{M} = \sum_{k=1}^{3}\omega_k\,\mathbf{M}_{\mathrm{an}}(\mathbf{H}_{r,k}), \qquad \sum_{k}\omega_k = 1'></div>
+          <p class="eq-cap">A spectrum of pinning forces, superposed with weights <i>&omega;<sub>k</sub></i>. One cell
+            gives a kinked loop; several give a smooth one.</p>
+        </li>
+        <li class="eq">
+          <div class="eq-tex" data-tex='\mathbf{H}_{r} = \frac{\partial \psi}{\partial \mathbf{M}}, \qquad \mathbf{H}_{i} \in \partial\rho(\dot{\mathbf{M}}), \qquad \rho(\dot{\mathbf{M}}) = \kappa\,\lVert\dot{\mathbf{M}}\rVert'></div>
+          <p class="eq-cap">Why &ldquo;energy-based&rdquo;: the reversible field is the derivative of a stored free energy
+            <i>&psi;</i>, the pinning field is the subdifferential of a dissipation pseudo-potential <i>&rho;</i>.
+            The friction bound is not a fitted rule &mdash; it falls out of <i>&rho;</i>.</p>
+        </li>
+      </ol>
+
+      <div class="chips" id="eq-live" aria-live="off"></div>
+    </div>
+
+    <!-- ── bottom row: controls | plots ── -->
+    <div class="row row-bottom">
+
+      <div class="card controls" id="card-controls">
+        <div class="card-head"><span class="card-title">4 &middot; Parameters</span></div>
+
+        <fieldset class="ctl-group">
+          <legend>Pinning forces <span class="legend-sym">&kappa;<sub>k</sub></span></legend>
+          <label class="ctl" data-cell="0"><span class="ctl-name"><i class="sw sw-1"></i>&kappa;<sub>1</sub></span>
+            <input type="range" id="kappa0" min="0" max="1.2" step="0.01" value="0.12"><output for="kappa0">0.12</output></label>
+          <label class="ctl" data-cell="1"><span class="ctl-name"><i class="sw sw-2"></i>&kappa;<sub>2</sub></span>
+            <input type="range" id="kappa1" min="0" max="1.2" step="0.01" value="0.40"><output for="kappa1">0.40</output></label>
+          <label class="ctl" data-cell="2"><span class="ctl-name"><i class="sw sw-3"></i>&kappa;<sub>3</sub></span>
+            <input type="range" id="kappa2" min="0" max="1.2" step="0.01" value="0.85"><output for="kappa2">0.85</output></label>
+        </fieldset>
+
+        <fieldset class="ctl-group">
+          <legend>Cell weights <span class="legend-sym">&omega;<sub>k</sub></span> <span class="legend-note">normalised to 1</span></legend>
+          <label class="ctl" data-cell="0"><span class="ctl-name"><i class="sw sw-1"></i>&omega;<sub>1</sub></span>
+            <input type="range" id="omega0" min="0" max="1" step="0.01" value="0.50"><output for="omega0">50%</output></label>
+          <label class="ctl" data-cell="1"><span class="ctl-name"><i class="sw sw-2"></i>&omega;<sub>2</sub></span>
+            <input type="range" id="omega1" min="0" max="1" step="0.01" value="0.30"><output for="omega1">30%</output></label>
+          <label class="ctl" data-cell="2"><span class="ctl-name"><i class="sw sw-3"></i>&omega;<sub>3</sub></span>
+            <input type="range" id="omega2" min="0" max="1" step="0.01" value="0.20"><output for="omega2">20%</output></label>
+        </fieldset>
+
+        <fieldset class="ctl-group">
+          <legend>Applied field <span class="legend-sym">H</span></legend>
+          <label class="ctl"><span class="ctl-name"><i class="sw sw-h"></i>H&middot;&ecirc;</span>
+            <input type="range" id="hmag" min="-2" max="2" step="0.01" value="0"><output for="hmag">0.00</output></label>
+          <label class="ctl"><span class="ctl-name">&theta;</span>
+            <input type="range" id="theta" min="-180" max="180" step="1" value="0"><output for="theta">0&deg;</output></label>
+        </fieldset>
+
+        <div class="btns">
+          <button class="btn btn-primary" id="btn-sweep">Sweep field</button>
+          <button class="btn" id="btn-reset">Reset state</button>
+        </div>
+        <p class="note">Drag the <b>H</b> arrow-head directly in the field plane for a genuinely 2&#8209;D history.</p>
+      </div>
+
+      <div class="plots">
+
+        <figure class="card">
+          <figcaption class="card-head">
+            <span class="card-title">5 &middot; Field plane</span>
+            <span class="card-sub">drag <b>H</b> &middot; circles are the friction bounds &kappa;<sub>k</sub></span>
+          </figcaption>
+          <div class="canvas-host"><canvas id="plot-field" role="img"
+            aria-label="Field plane showing the pinning circles of each cell, the reversible and irreversible field vectors, the applied field and the resulting magnetisation. The same numbers are in the table below."></canvas>
+            <div class="tip" id="tip-field" hidden></div>
+          </div>
+          <ul class="legend" id="legend-field"></ul>
+        </figure>
+
+        <figure class="card">
+          <figcaption class="card-head">
+            <span class="card-title">6 &middot; Projected loop</span>
+            <span class="card-sub">M&middot;&ecirc; against H&middot;&ecirc;</span>
+          </figcaption>
+          <div class="canvas-host"><canvas id="plot-loop" role="img"
+            aria-label="Magnetisation projected on the drive axis against the applied field projected on the same axis, traced from the interaction history, with the anhysteretic curve for reference."></canvas>
+          </div>
+          <ul class="legend" id="legend-loop"></ul>
+        </figure>
+
+      </div>
+    </div>
+
+    <!-- ── table view ── -->
+    <div class="card" id="card-table">
+      <div class="card-head"><span class="card-title">7 &middot; State</span>
+        <span class="card-sub">the numbers behind the plots</span></div>
+      <div class="table-wrap">
+        <table class="state-table">
+          <thead>
+            <tr><th scope="col">Cell</th><th scope="col">&kappa;<sub>k</sub></th><th scope="col">&omega;<sub>k</sub></th>
+              <th scope="col">&#8214;H<sub>r,k</sub>&#8214;</th><th scope="col">&#8214;H<sub>i,k</sub>&#8214;</th>
+              <th scope="col">&#8214;M<sub>k</sub>&#8214;/M<sub>s</sub></th><th scope="col">&ang;M<sub>k</sub></th><th scope="col">State</th></tr>
+          </thead>
+          <tbody id="state-rows"></tbody>
+          <tfoot id="state-foot"></tfoot>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /panel -->
+
+  <section class="prose">
+    <h2>How to read the panel</h2>
+    <p>
+      Pull the hand (the applied field <b>H</b>) and each block follows on a spring. While the spring force stays
+      under that block&rsquo;s friction limit <i>&kappa;<sub>k</sub></i> the block does not move at all: the cell
+      <b>sticks</b>, its magnetisation is frozen, and the field you added went entirely into the spring. Push past
+      the limit and the block <b>slips</b>, dragged along at exactly the friction force. Reverse the hand and the
+      spring must be unloaded and reloaded the other way before anything moves again &mdash; that lag, and nothing
+      else, is the hysteresis you see in the loop.
+    </p>
+    <p>
+      In two dimensions the friction limit is no longer a threshold on a line but a <b>circle of radius
+      <i>&kappa;<sub>k</sub></i></b>. The applied field can move anywhere inside that circle for free; the state
+      <span class="tok tok-r">H<sub>r,k</sub></span> is only dragged when the field pushes the boundary, and then
+      only along the direction of the push. That is what makes the model a <em>vector</em> model rather than a
+      scalar loop applied twice: rotating the field at constant magnitude still moves the state, and the
+      magnetisation trails the field by an angle instead of a phase.
+    </p>
+    <h2>Things worth trying</h2>
+    <ul class="try">
+      <li>Set every <i>&kappa;<sub>k</sub></i> to zero and sweep: the loop collapses onto the anhysteretic curve.
+        No friction, no memory.</li>
+      <li>Give one cell all the weight and sweep: a sharply kinked loop. Spread the weight over three different
+        pinning forces and the kinks blend into a smooth, realistic loop.</li>
+      <li>Sweep to saturation, return to <span class="mono">H&middot;&ecirc; = 0</span> and read the table:
+        what is left is remanence &mdash; blocks that never made it home.</li>
+      <li>Drag <b>H</b> slowly around a circle larger than the biggest <i>&kappa;</i>: every state follows on a
+        smaller circle, lagging behind &mdash; rotational hysteresis.</li>
+    </ul>
+    <h2>Background</h2>
+    <p class="refs">
+      A.&nbsp;Bergqvist, &ldquo;Magnetic vector hysteresis model with dry friction-like pinning,&rdquo;
+      <i>Physica B</i> 233 (1997) 342&ndash;347.<br>
+      F.&nbsp;Henrotte, A.&nbsp;Nicolet, K.&nbsp;Hameyer, &ldquo;An energy-based vector hysteresis model for
+      ferromagnetic materials,&rdquo; <i>COMPEL</i> 25(1) (2006) 71&ndash;80.<br>
+      V.&nbsp;Fran&ccedil;ois-Lavet, F.&nbsp;Henrotte, L.&nbsp;Stainier, L.&nbsp;Noels, C.&nbsp;Geuzaine,
+      &ldquo;An energy-based variational model of ferromagnetic hysteresis for finite element computations,&rdquo;
+      <i>J. Comput. Appl. Math.</i> 246 (2013) 243&ndash;250.
+    </p>
+    <p class="note">
+      Quantities on this page are dimensionless: fields are in units of the anhysteretic scale <i>a</i>&thinsp;&times;&thinsp;const,
+      magnetisation in units of <i>M<sub>s</sub></i>. The model is drawn with three cells; a real identification
+      uses tens.
+    </p>
+  </section>
+
+</section>
+
+<!-- ──────────────────────  EMPTY SECTIONS  ────────────────────── -->
+<section class="view" id="view-parameterization" role="tabpanel" aria-labelledby="tab-parameterization" tabindex="-1" hidden>
+  <div class="empty"><h2>Parameterization</h2><p>In preparation.</p></div>
+</section>
+<section class="view" id="view-resampling" role="tabpanel" aria-labelledby="tab-resampling" tabindex="-1" hidden>
+  <div class="empty"><h2>Resampling</h2><p>In preparation.</p></div>
+</section>
+<section class="view" id="view-identification" role="tabpanel" aria-labelledby="tab-identification" tabindex="-1" hidden>
+  <div class="empty"><h2>Identification</h2><p>In preparation.</p></div>
+</section>
+
+</main>
+
+<footer class="site-foot">
+  <span>Energy-based vector hysteresis model &mdash; project documentation</span>
+  <a href="https://github.com/enizimus/energy-based-hysteresis">source</a>
+</footer>
+
+</body>
+</html>
