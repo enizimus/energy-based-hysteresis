@@ -38,38 +38,9 @@
 
   <div class="panel">
 
-    <!-- ── top row: friction analogy | Weiss cells ── -->
-    <div class="row row-top">
-
-      <figure class="card" id="card-friction">
-        <figcaption class="card-head">
-          <span class="card-title">1 &middot; Mechanical analogy</span>
-          <span class="seg" role="group" aria-label="Analogy view">
-            <button class="seg-btn is-on" data-mode="1d" aria-pressed="true">1&#8209;D</button>
-            <button class="seg-btn" data-mode="2d" aria-pressed="false">2&#8209;D</button>
-          </span>
-        </figcaption>
-        <div class="fig-host" id="friction-fig"></div>
-        <p class="note" id="friction-note"></p>
-      </figure>
-
-      <figure class="card" id="card-weiss">
-        <figcaption class="card-head">
-          <span class="card-title">2 &middot; Weiss cells</span>
-          <span class="card-sub">tile count &prop; &omega;<sub>k</sub>, defects &prop; &kappa;<sub>k</sub></span>
-        </figcaption>
-        <div class="fig-host" id="weiss-fig"></div>
-        <p class="note">
-          Each cell magnetises along its own reversible field, so a strongly pinned cell lags behind the applied
-          field. The material response is the weighted sum of the cells.
-        </p>
-      </figure>
-
-    </div>
-
     <!-- ── equations ── -->
     <div class="card" id="card-eq">
-      <div class="card-head"><span class="card-title">3 &middot; The model in six lines</span></div>
+      <div class="card-head"><span class="card-title">1 &middot; The model in six lines</span></div>
 
       <ol class="eqs">
         <li class="eq">
@@ -108,6 +79,35 @@
       </ol>
 
       <div class="chips" id="eq-live" aria-live="off"></div>
+    </div>
+
+    <!-- ── top row: friction analogy | Weiss cells ── -->
+    <div class="row row-top">
+
+      <figure class="card" id="card-friction">
+        <figcaption class="card-head">
+          <span class="card-title">2 &middot; Mechanical analogy</span>
+          <span class="seg" role="group" aria-label="Analogy view">
+            <button class="seg-btn is-on" data-mode="1d" aria-pressed="true">1&#8209;D</button>
+            <button class="seg-btn" data-mode="2d" aria-pressed="false">2&#8209;D</button>
+          </span>
+        </figcaption>
+        <div class="fig-host" id="friction-fig"></div>
+        <p class="note" id="friction-note"></p>
+      </figure>
+
+      <figure class="card" id="card-weiss">
+        <figcaption class="card-head">
+          <span class="card-title">3 &middot; Weiss cells</span>
+          <span class="card-sub">tile count &prop; &omega;<sub>k</sub>, defects &prop; &kappa;<sub>k</sub></span>
+        </figcaption>
+        <div class="fig-host" id="weiss-fig"></div>
+        <p class="note">
+          Each cell magnetises along its own reversible field, so a strongly pinned cell lags behind the applied
+          field. The material response is the weighted sum of the cells.
+        </p>
+      </figure>
+
     </div>
 
     <!-- ── bottom row: controls | plots ── -->
