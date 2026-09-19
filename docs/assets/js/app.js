@@ -8,7 +8,7 @@ import { createFieldPlot } from './model/vectorplot.js';
 import { createLoopPlot } from './model/loop.js';
 import { createReadout } from './model/readout.js';
 import { createControls } from './model/controls.js';
-import { renderEquations } from './model/equations.js';
+import { renderEquations, renderAnhysteretic } from './model/equations.js';
 
 /* ── tabs ────────────────────────────────────────────────────────────── */
 
@@ -69,6 +69,7 @@ const ro = new ResizeObserver(mark);
   document.getElementById('friction-fig')].forEach((n) => ro.observe(n));
 window.matchMedia('(prefers-color-scheme: dark)')
   .addEventListener('change', () => { invalidatePalette(); mark(); });
+window.addEventListener('load', mark);   // KaTeX may land after the first paint
 
 function render() {
   const d = E.derive(state);
@@ -77,6 +78,7 @@ function render() {
   fieldPlot.render(d);
   loopPlot.render(d);
   readout.render(d);
+  renderAnhysteretic(d.anh.model);
   controls.sync();
 }
 

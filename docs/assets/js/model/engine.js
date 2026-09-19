@@ -4,7 +4,7 @@
  *   H          = Hr_k + Hi_k            (reversible + irreversible split)
  *   |Hi_k|    <= kappa_k                (dry-friction bound)
  *   Hr_k       = play_{kappa_k}(H)      (vector play operator, carries the memory)
- *   M          = sum_k w_k * Man(Hr_k)  (Man = Langevin anhysteretic)
+ *   M          = sum_k w_k * Man(Hr_k)  (Man = Langevin or arctangent anhysteretic)
  *
  * The applied-field path is the only thing stored; the cell states are a pure
  * function of it, so changing kappa or omega simply replays the path.
@@ -13,8 +13,8 @@
 export const N_CELLS = 3;
 export const H_MAX = 2.0;          // |H| limit, dimensionless
 export const KAPPA_MAX = 1.2;
-export const MS = 1.0;             // saturation magnetisation (units of Ms)
-export const A_LANG = 0.30;        // Langevin shape parameter
+export const MS_MAX = 1.2;         // slider ceiling for the saturation magnetisation
+export const A_MIN = 0.02, A_MAX = 1.5;   // range of the anhysteretic shape parameter
 export const SAMPLE_MAX = 4000;    // path length cap
 export const STEP_MAX = 0.04;      // field path is subdivided to this resolution
 
@@ -35,16 +35,24 @@ export function langevin(x) {
   return 1 / Math.tanh(x) - 1 / x;
 }
 
-/** Anhysteretic magnetisation evaluated at the reversible field. */
-export function anhysteretic(hr) {
-  const n = norm(hr);
-  if (n < EPS) return v(0, 0);
-  const m = MS * langevin(n / A_LANG);
-  return v((m * hr.x) / n, (m * hr.y) / n);
+/**
+ * Signed anhysteretic magnetisation along the field, in one of two laws:
+ *   langevin  M = Ms * (coth(h/a) - a/h)
+ *   atan      M = (2 Ms / pi) * arctan(h / A)
+ * Both are odd, single-valued and saturate at Ms.
+ */
+export function anhystScalar(h, anh) {
+  if (anh.model === 'atan') return ((2 * anh.ms) / Math.PI) * Math.atan(h / anh.a);
+  return anh.ms * langevin(h / anh.a);
 }
 
-/** Scalar anhysteretic magnitude, for the reference curve on the loop plot. */
-export const anhystScalar = (h) => MS * langevin(h / A_LANG);
+/** Anhysteretic magnetisation evaluated at the reversible field. */
+export function anhysteretic(hr, anh) {
+  const n = norm(hr);
+  if (n < EPS) return v(0, 0);
+  const m = anhystScalar(n, anh);
+  return v((m * hr.x) / n, (m * hr.y) / n);
+}
 
 /**
  * Vector play operator: drag `hr` no further than the boundary of the ball of
@@ -65,6 +73,9 @@ export function createState() {
   const omegas = [0.50, 0.30, 0.20];
   return {
     cells: kappas.map((kappa, k) => ({ kappa, omega: omegas[k], hr: v(), status: 'stick' })),
+    // anhysteretic law: each model keeps its own shape parameter, so switching back and forth
+    // never silently rescales the other one
+    anh: { model: 'langevin', ms: 1.0, langevinA: 0.30, atanA: 0.50 },
     H: v(),                 // applied field
     s: 0,                   // signed field along the drive axis (slider value)
     thetaDeg: 0,            // drive axis angle
@@ -74,6 +85,13 @@ export function createState() {
     frictionMode: '1d',
   };
 }
+
+/** The active anhysteretic parameters: { model, ms, a }. */
+export const anhOf = (state) => ({
+  model: state.anh.model,
+  ms: state.anh.ms,
+  a: state.anh.model === 'atan' ? state.anh.atanA : state.anh.langevinA,
+});
 
 export const axisOf = (state) => {
   const t = (state.thetaDeg * Math.PI) / 180;
@@ -86,10 +104,10 @@ export function weights(state) {
   return state.cells.map((c) => c.omega / sum);
 }
 
-export function totalM(hrs, w) {
+export function totalM(hrs, w, anh) {
   let x = 0, y = 0;
   for (let k = 0; k < hrs.length; k++) {
-    const m = anhysteretic(hrs[k]);
+    const m = anhysteretic(hrs[k], anh);
     x += w[k] * m.x;
     y += w[k] * m.y;
   }
@@ -105,6 +123,7 @@ function classify(stretch, kappa, moved) {
 /** One field increment: advance every cell, append one sample. */
 function advance(state, H) {
   const w = weights(state);
+  const anh = anhOf(state);
   const hrs = [];
   for (const cell of state.cells) {
     const r = play(cell.hr, H, cell.kappa);
@@ -113,7 +132,7 @@ function advance(state, H) {
     hrs.push(copy(r.hr));
   }
   state.H = copy(H);
-  state.samples.push({ h: copy(H), m: totalM(hrs, w), hr: hrs });
+  state.samples.push({ h: copy(H), m: totalM(hrs, w, anh), hr: hrs });
   trim(state);
 }
 
@@ -164,6 +183,7 @@ export function dragField(state, x, y) {
 /** Replay the stored path from the retained base state (after a κ/ω change). */
 export function recompute(state) {
   const w = weights(state);
+  const anh = anhOf(state);
   const hrs = state.base.map(copy);
   let last = null;
   for (const sample of state.samples) {
@@ -171,7 +191,7 @@ export function recompute(state) {
       hrs[k] = play(hrs[k], sample.h, state.cells[k].kappa).hr;
     }
     sample.hr = hrs.map(copy);
-    sample.m = totalM(sample.hr, w);
+    sample.m = totalM(sample.hr, w, anh);
     last = sample;
   }
   // re-derive the live cell state from the replayed path
@@ -181,7 +201,7 @@ export function recompute(state) {
     cell.hr = r.hr;
     cell.status = classify(r.stretch, cell.kappa, r.moved);
   });
-  if (last) { last.hr = state.cells.map((c) => copy(c.hr)); last.m = totalM(last.hr, w); }
+  if (last) { last.hr = state.cells.map((c) => copy(c.hr)); last.m = totalM(last.hr, w, anh); }
 }
 
 export function setKappa(state, k, value) {
@@ -191,7 +211,34 @@ export function setKappa(state, k, value) {
 
 export function setOmega(state, k, value) {
   state.cells[k].omega = Math.max(0, Math.min(1, value));
-  recompute(state);
+  refreshM(state);
+}
+
+/**
+ * Weights and the anhysteretic law enter only through M — the pinning states are
+ * untouched — so the stored path keeps its Hr and only the magnetisations are redone.
+ */
+export function refreshM(state) {
+  const w = weights(state);
+  const anh = anhOf(state);
+  for (const sample of state.samples) sample.m = totalM(sample.hr, w, anh);
+}
+
+export function setAnhModel(state, model) {
+  state.anh.model = model === 'atan' ? 'atan' : 'langevin';
+  refreshM(state);
+}
+
+export function setMs(state, value) {
+  state.anh.ms = Math.max(0.05, Math.min(MS_MAX, value));
+  refreshM(state);
+}
+
+/** Shape parameter of whichever law is active (a for Langevin, A for arctangent). */
+export function setAnhA(state, value) {
+  const a = Math.max(A_MIN, Math.min(A_MAX, value));
+  if (state.anh.model === 'atan') state.anh.atanA = a; else state.anh.langevinA = a;
+  refreshM(state);
 }
 
 /** Back to the virgin state: every cell demagnetised, history cleared. */
@@ -230,9 +277,10 @@ export function stepSweep(state, dt) {
 export function derive(state) {
   const w = weights(state);
   const e = axisOf(state);
+  const anh = anhOf(state);
   const cells = state.cells.map((cell, k) => {
     const hi = v(state.H.x - cell.hr.x, state.H.y - cell.hr.y);
-    const m = anhysteretic(cell.hr);
+    const m = anhysteretic(cell.hr, anh);
     return {
       index: k,
       kappa: cell.kappa,
@@ -248,7 +296,7 @@ export function derive(state) {
       status: cell.status,
     };
   });
-  const M = totalM(state.cells.map((c) => c.hr), w);
+  const M = totalM(state.cells.map((c) => c.hr), w, anh);
   const Hmag = norm(state.H);
   const Mmag = norm(M);
   let lag = 0;
@@ -257,7 +305,7 @@ export function derive(state) {
     lag = (Math.acos(Math.max(-1, Math.min(1, c))) * 180) / Math.PI;
   }
   return {
-    cells, M, Mmag, Hmag,
+    cells, M, Mmag, Hmag, anh,
     H: state.H,
     axis: e,
     s: state.s,

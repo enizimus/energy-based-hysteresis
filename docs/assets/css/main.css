@@ -127,6 +127,8 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 0 20px 60px; }
 }
 .seg-btn:hover { background: var(--hover); }
 .seg-btn.is-on { background: var(--ink); color: var(--surface); }
+.seg-block { display: flex; width: 100%; margin-bottom: 9px; }
+.seg-block .seg-btn { flex: 1; padding: 4px 6px; text-align: center; }
 
 /* ── equations ──────────────────────────────────────────────────────────── */
 .eqs { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(min(430px, 100%), 1fr)); }
@@ -155,7 +157,8 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 0 20px 60px; }
 .ctl-group legend { font-size: 12px; color: var(--muted); padding: 0; margin-bottom: 8px; }
 .legend-sym { color: var(--ink-2); }
 .ctl { display: grid; grid-template-columns: 46px minmax(0, 1fr) 46px; align-items: center; gap: 8px; margin-bottom: 7px; }
-.ctl-name { font-size: 12.5px; color: var(--ink-2); display: inline-flex; align-items: center; gap: 6px; }
+.ctl-name { font-size: 12.5px; color: var(--ink-2); display: block; white-space: nowrap; }
+.ctl-name .sw { margin-right: 6px; vertical-align: middle; }   /* inline flow keeps real subscripts */
 .ctl output { font-size: 12px; font-variant-numeric: tabular-nums; color: var(--ink); text-align: right; }
 .sw { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex: none; }
 .sw-1 { background: var(--c1); } .sw-2 { background: var(--c2); } .sw-3 { background: var(--c3); }
@@ -177,6 +180,8 @@ input[type="range"]::-moz-range-thumb {
 .ctl[data-cell="0"] input[type="range"]::-webkit-slider-thumb { background: var(--c1); }
 .ctl[data-cell="1"] input[type="range"]::-webkit-slider-thumb { background: var(--c2); }
 .ctl[data-cell="2"] input[type="range"]::-webkit-slider-thumb { background: var(--c3); }
+.ctl[data-role="m"] input[type="range"]::-webkit-slider-thumb { background: var(--cm); }
+.ctl[data-role="m"] input[type="range"]::-moz-range-thumb { background: var(--cm); }
 .ctl[data-cell="0"] input[type="range"]::-moz-range-thumb { background: var(--c1); }
 .ctl[data-cell="1"] input[type="range"]::-moz-range-thumb { background: var(--c2); }
 .ctl[data-cell="2"] input[type="range"]::-moz-range-thumb { background: var(--c3); }

@@ -2,7 +2,6 @@
  * of both plots), and the two static legends. */
 
 import { palette } from './palette.js';
-import { MS } from './engine.js';
 import { M_SCALE } from './vectorplot.js';
 
 const SUB = ['₁', '₂', '₃'];
@@ -59,7 +58,7 @@ export function createReadout({ chips, rows, foot, legendField, legendLoop }) {
         td[2].textContent = `${(c.w * 100).toFixed(0)}%`;
         td[3].textContent = c.hrMag.toFixed(3);
         td[4].textContent = c.hiMag.toFixed(3);
-        td[5].textContent = (c.mMag / MS).toFixed(3);
+        td[5].textContent = (c.mMag / d.anh.ms).toFixed(3);
         td[6].textContent = c.mMag > 1e-4 ? `${deg(c.mAngle)}°` : '—';
         const tag = td[7].firstElementChild;
         tag.textContent = STATUS[c.status];
@@ -67,12 +66,13 @@ export function createReadout({ chips, rows, foot, legendField, legendLoop }) {
       });
 
       const totalChip = chipEls[chipEls.length - 1];
-      totalChip.querySelector('b').textContent = `‖M‖ ${(d.Mmag / MS).toFixed(3)} Mₛ`;
+      totalChip.querySelector('b').textContent = `‖M‖ ${d.Mmag.toFixed(3)}`;
       totalChip.querySelector('.val').textContent = `∠(H, M) ${d.Mmag > 1e-4 && d.Hmag > 1e-6 ? d.lagDeg.toFixed(0) : '—'}°`;
 
       rowEls[rowEls.length - 1].firstElementChild.textContent =
-        `‖H‖ ${d.Hmag.toFixed(3)}  ·  H·ê ${d.hProj.toFixed(3)}  ·  ‖M‖ ${(d.Mmag / MS).toFixed(3)} Mₛ`
-        + `  ·  M·ê ${(d.mProj / MS).toFixed(3)} Mₛ  ·  lag ${d.Mmag > 1e-4 && d.Hmag > 1e-6 ? d.lagDeg.toFixed(0) : '—'}°`
+        `‖H‖ ${d.Hmag.toFixed(3)}  ·  H·ê ${d.hProj.toFixed(3)}  ·  ‖M‖ ${d.Mmag.toFixed(3)}`
+        + `  ·  M·ê ${d.mProj.toFixed(3)}  ·  Mₛ ${d.anh.ms.toFixed(2)} (${d.anh.model === 'atan' ? 'arctan' : 'Langevin'})`
+        + `  ·  lag ${d.Mmag > 1e-4 && d.Hmag > 1e-6 ? d.lagDeg.toFixed(0) : '—'}°`
         + `  ·  path ${d.samples.length} samples`;
     },
   };

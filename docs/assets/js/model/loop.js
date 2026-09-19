@@ -2,11 +2,11 @@
  * with the single-valued anhysteretic curve for reference. */
 
 import { prepare, polyline, dot, label } from './canvas.js';
-import { palette } from './palette.js';
-import { H_MAX, MS, anhystScalar } from './engine.js';
+import { palette, alpha } from './palette.js';
+import { H_MAX, anhystScalar } from './engine.js';
 
 const PAD = { l: 40, r: 14, t: 14, b: 26 };
-const YMAX = 1.08;
+const YMAX = 1.3;
 
 export function createLoopPlot(canvas) {
   return {
@@ -40,28 +40,42 @@ export function createLoopPlot(canvas) {
       }
       label(ctx, w - PAD.r, h - PAD.b + 14, 'H · ê', { color: p.muted, size: 10, align: 'right' });
       label(ctx, PAD.l - 7, Y(0) + 3, '0', { color: p.muted, size: 10, align: 'right' });
-      label(ctx, PAD.l + 4, PAD.t + 2, 'M · ê / Mₛ', { color: p.muted, size: 10, baseline: 'top' });
+      label(ctx, PAD.l + 4, PAD.t + 2, 'M · ê', { color: p.muted, size: 10, baseline: 'top' });
+
+      // saturation of the anhysteretic law currently selected
+      ctx.save();
+      ctx.strokeStyle = alpha(p.cm, 0.35);
+      ctx.lineWidth = 1;
+      for (const sign of [1, -1]) {
+        ctx.beginPath();
+        ctx.moveTo(X(-H_MAX), Y(sign * d.anh.ms));
+        ctx.lineTo(X(H_MAX), Y(sign * d.anh.ms));
+        ctx.stroke();
+      }
+      ctx.restore();
+      label(ctx, X(-H_MAX) + 4, Y(d.anh.ms) - 4, `Mₛ = ${d.anh.ms.toFixed(2)}`, { color: p.muted, size: 10 });
 
       // anhysteretic reference
       const ref = [];
-      for (let v = -H_MAX; v <= H_MAX + 1e-9; v += 0.02) ref.push([X(v), Y(anhystScalar(v) / MS)]);
+      for (let v = -H_MAX; v <= H_MAX + 1e-9; v += 0.02) ref.push([X(v), Y(clampM(anhystScalar(v, d.anh)))]);
       polyline(ctx, ref, { color: p.muted, width: 1.3, alpha: 0.7 });
-      label(ctx, X(H_MAX) - 4, Y(anhystScalar(H_MAX) / MS) - 8, 'anhysteretic',
+      label(ctx, X(H_MAX) - 4, Y(clampM(anhystScalar(H_MAX, d.anh))) - 8,
+        d.anh.model === 'atan' ? 'anhysteretic (arctan)' : 'anhysteretic (Langevin)',
         { color: p.muted, size: 10, align: 'right' });
 
       // traced loop
       const e = d.axis;
       const pts = d.samples.map((s) => [
         X(clampH(s.h.x * e.x + s.h.y * e.y)),
-        Y(clampM((s.m.x * e.x + s.m.y * e.y) / MS)),
+        Y(clampM(s.m.x * e.x + s.m.y * e.y)),
       ]);
       polyline(ctx, pts, { color: p.cm, width: 2 });
 
-      const cx = X(clampH(d.hProj)), cy = Y(clampM(d.mProj / MS));
+      const cx = X(clampH(d.hProj)), cy = Y(clampM(d.mProj));
       dot(ctx, cx, cy, 4.5, p.cm, p.surface);
       const flip = cx > w - 70;
       label(ctx, cx + (flip ? -9 : 9), cy + (d.mProj > 0 ? 14 : -8),
-        `${d.hProj.toFixed(2)}, ${(d.mProj / MS).toFixed(2)}`,
+        `${d.hProj.toFixed(2)}, ${d.mProj.toFixed(2)}`,
         { color: p.ink2, size: 10.5, align: flip ? 'right' : 'left' });
 
       if (!d.samples.length) {

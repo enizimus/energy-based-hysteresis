@@ -12,9 +12,13 @@ export function createControls(root, state, onChange) {
   const omegas = [0, 1, 2].map((k) => q(`#omega${k}`));
   const hmag = q('#hmag');
   const theta = q('#theta');
+  const ms = q('#ms');
+  const ashape = q('#ashape');
+  const aName = q('#ctl-a-name');
   const sweepBtn = q('#btn-sweep');
   const resetBtn = q('#btn-reset');
-  const segBtns = [...root.querySelectorAll('.seg-btn')];
+  const viewBtns = [...root.querySelectorAll('.seg-btn[data-mode]')];
+  const lawBtns = [...root.querySelectorAll('.seg-btn[data-anh]')];
 
   kappas.forEach((input, k) => input.addEventListener('input', () => {
     E.setKappa(state, k, Number(input.value));
@@ -24,6 +28,9 @@ export function createControls(root, state, onChange) {
     E.setOmega(state, k, Number(input.value));
     onChange();
   }));
+  ms.addEventListener('input', () => { E.setMs(state, Number(ms.value)); onChange(); });
+  ashape.addEventListener('input', () => { E.setAnhA(state, Number(ashape.value)); onChange(); });
+
   hmag.addEventListener('input', () => {
     state.sweep = null;
     E.setDrive(state, Number(hmag.value), state.thetaDeg);
@@ -37,13 +44,21 @@ export function createControls(root, state, onChange) {
   sweepBtn.addEventListener('click', () => { E.toggleSweep(state); onChange(); });
   resetBtn.addEventListener('click', () => { E.resetState(state); onChange(); });
 
-  segBtns.forEach((btn) => btn.addEventListener('click', () => {
+  const pressOnly = (group, btn) => group.forEach((b) => {
+    const on = b === btn;
+    b.classList.toggle('is-on', on);
+    b.setAttribute('aria-pressed', String(on));
+  });
+
+  viewBtns.forEach((btn) => btn.addEventListener('click', () => {
     state.frictionMode = btn.dataset.mode;
-    segBtns.forEach((b) => {
-      const on = b === btn;
-      b.classList.toggle('is-on', on);
-      b.setAttribute('aria-pressed', String(on));
-    });
+    pressOnly(viewBtns, btn);
+    onChange();
+  }));
+
+  lawBtns.forEach((btn) => btn.addEventListener('click', () => {
+    E.setAnhModel(state, btn.dataset.anh);
+    pressOnly(lawBtns, btn);
     onChange();
   }));
 
@@ -59,6 +74,13 @@ export function createControls(root, state, onChange) {
         if (document.activeElement !== input) input.value = String(state.cells[k].omega);
         outOf(input).textContent = `${Math.round(w[k] * 100)}%`;
       });
+      const anh = E.anhOf(state);
+      if (document.activeElement !== ms) ms.value = String(anh.ms);
+      outOf(ms).textContent = anh.ms.toFixed(2);
+      if (document.activeElement !== ashape) ashape.value = String(anh.a);
+      outOf(ashape).textContent = anh.a.toFixed(2);
+      aName.textContent = anh.model === 'atan' ? 'A' : 'a';
+
       if (document.activeElement !== hmag) hmag.value = String(state.s);
       outOf(hmag).textContent = state.s.toFixed(2);
       if (document.activeElement !== theta) theta.value = String(state.thetaDeg);

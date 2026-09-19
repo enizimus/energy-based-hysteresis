@@ -3,12 +3,12 @@
 
 import { el, text, arrow } from './svg.js';
 import { palette } from './palette.js';
-import { MS, KAPPA_MAX } from './engine.js';
+import { KAPPA_MAX } from './engine.js';
 
 const W = 540, HGT = 300;
 const TILES = 12, COLS = 4, TILE = 60, GAP = 7;
 const GX = 14, GY = 46;
-const OX = 408, OY = 152, RUNIT = 64;   // resultant panel
+const OX = 408, OY = 152, RUNIT = 62;   // resultant panel: px per unit magnetisation
 const SUB = ['₁', '₂', '₃'];
 
 // fixed defect positions inside a tile, revealed one by one as kappa grows
@@ -43,7 +43,7 @@ export function createWeiss(host) {
         }
 
         const cx = x + TILE / 2, cy = y + TILE / 2;
-        const rel = Math.min(1, c.mMag / MS);
+        const rel = Math.min(1, c.mMag / d.anh.ms);
         if (rel < 0.03) {
           svg.appendChild(el('circle', { cx, cy, r: 4, fill: 'none', stroke: color, 'stroke-width': 1.4, opacity: 0.8 }));
         } else {
@@ -65,15 +65,16 @@ export function createWeiss(host) {
 
 function drawResultant(svg, d, p) {
   svg.appendChild(text(OX - RUNIT, 22, 'superposition', { fill: p.muted, 'font-size': 10.5 }));
-  svg.appendChild(el('circle', { cx: OX, cy: OY, r: RUNIT, fill: 'none', stroke: p.grid, 'stroke-width': 1 }));
-  svg.appendChild(text(OX + RUNIT + 4, OY + 12, 'Mₛ', { fill: p.muted, 'font-size': 10 }));
+  const rsat = d.anh.ms * RUNIT;
+  svg.appendChild(el('circle', { cx: OX, cy: OY, r: rsat, fill: 'none', stroke: p.grid, 'stroke-width': 1 }));
+  svg.appendChild(text(OX + rsat + 4, OY + 12, 'Mₛ', { fill: p.muted, 'font-size': 10 }));
 
   // applied-field direction (magnitude is not comparable — direction only)
   if (d.Hmag > 1e-6) {
     const ux = d.H.x / d.Hmag, uy = -d.H.y / d.Hmag;
-    svg.appendChild(arrow(OX, OY, OX + ux * (RUNIT + 12), OY + uy * (RUNIT + 12),
+    svg.appendChild(arrow(OX, OY, OX + ux * (rsat + 12), OY + uy * (rsat + 12),
       { color: p.ink, width: 1.4, head: 7, opacity: 0.55 }));
-    svg.appendChild(text(OX + ux * (RUNIT + 20), OY + uy * (RUNIT + 20) + 4, 'H',
+    svg.appendChild(text(OX + ux * (rsat + 20), OY + uy * (rsat + 20) + 4, 'H',
       { fill: p.ink, 'font-size': 11, 'font-weight': 600, 'text-anchor': 'middle', opacity: 0.8 }));
   }
 
@@ -96,7 +97,7 @@ function drawResultant(svg, d, p) {
 
   const lag = d.Hmag > 1e-6 && d.Mmag > 1e-4 ? `∠(H, M) = ${d.lagDeg.toFixed(0)}°` : '';
   svg.appendChild(text(OX, 276, lag, { fill: p.muted, 'font-size': 10.5, 'text-anchor': 'middle' }));
-  svg.appendChild(text(OX, 258, `‖M‖ = ${d.Mmag.toFixed(3)} Mₛ`,
+  svg.appendChild(text(OX, 258, `‖M‖ = ${d.Mmag.toFixed(3)}`,
     { fill: p.ink2, 'font-size': 11, 'text-anchor': 'middle' }));
 }
 

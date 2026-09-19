@@ -3,7 +3,7 @@
 
 import { prepare, drawArrow, dot, polyline, label } from './canvas.js';
 import { palette, alpha } from './palette.js';
-import { H_MAX, MS } from './engine.js';
+
 
 const R = 2.35;          // world half-extent
 const M_SCALE = 1.5;     // magnetisation drawn at this many field units per Ms
@@ -67,7 +67,7 @@ export function createFieldPlot(canvas, tip, { onField }) {
       ctx.strokeStyle = alpha(p.cm, 0.28);
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.arc(X(0), Y(0), MS * M_SCALE * s, 0, Math.PI * 2);
+      ctx.arc(X(0), Y(0), d.anh.ms * M_SCALE * s, 0, Math.PI * 2);
       ctx.stroke();
       ctx.restore();
 
