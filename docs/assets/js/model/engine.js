@@ -15,6 +15,7 @@ export const H_MAX = 2.0;          // |H| limit, dimensionless
 export const KAPPA_MAX = 1.2;
 export const MS_MAX = 1.2;         // slider ceiling for the saturation magnetisation
 export const A_MIN = 0.02, A_MAX = 1.5;   // range of the anhysteretic shape parameter
+export const P_MIN = 0.4, P_MAX = 2.5;    // range of the arctangent exponent
 export const SAMPLE_MAX = 4000;    // path length cap
 export const STEP_MAX = 0.04;      // field path is subdivided to this resolution
 
@@ -38,11 +39,15 @@ export function langevin(x) {
 /**
  * Signed anhysteretic magnetisation along the field, in one of two laws:
  *   langevin  M = Ms * (coth(h/a) - a/h)
- *   atan      M = (2 Ms / pi) * arctan(h / A)
+ *   atan      M = (2 Ms / pi) * arctan((h/A)^p)
  * Both are odd, single-valued and saturate at Ms.
  */
 export function anhystScalar(h, anh) {
-  if (anh.model === 'atan') return ((2 * anh.ms) / Math.PI) * Math.atan(h / anh.a);
+  if (anh.model === 'atan') {
+    // the exponent acts on the magnitude, so the law stays odd for fractional p
+    const u = Math.abs(h) / anh.a;
+    return Math.sign(h) * ((2 * anh.ms) / Math.PI) * Math.atan(u ** anh.p);
+  }
   return anh.ms * langevin(h / anh.a);
 }
 
@@ -75,7 +80,7 @@ export function createState() {
     cells: kappas.map((kappa, k) => ({ kappa, omega: omegas[k], hr: v(), status: 'stick' })),
     // anhysteretic law: each model keeps its own shape parameter, so switching back and forth
     // never silently rescales the other one
-    anh: { model: 'langevin', ms: 1.0, langevinA: 0.30, atanA: 0.50 },
+    anh: { model: 'langevin', ms: 1.0, langevinA: 0.30, atanA: 0.50, atanP: 1.0 },
     H: v(),                 // applied field
     s: 0,                   // signed field along the drive axis (slider value)
     thetaDeg: 0,            // drive axis angle
@@ -86,11 +91,12 @@ export function createState() {
   };
 }
 
-/** The active anhysteretic parameters: { model, ms, a }. */
+/** The active anhysteretic parameters: { model, ms, a, p }. */
 export const anhOf = (state) => ({
   model: state.anh.model,
   ms: state.anh.ms,
   a: state.anh.model === 'atan' ? state.anh.atanA : state.anh.langevinA,
+  p: state.anh.atanP,
 });
 
 export const axisOf = (state) => {
@@ -238,6 +244,12 @@ export function setMs(state, value) {
 export function setAnhA(state, value) {
   const a = Math.max(A_MIN, Math.min(A_MAX, value));
   if (state.anh.model === 'atan') state.anh.atanA = a; else state.anh.langevinA = a;
+  refreshM(state);
+}
+
+/** Exponent of the arctangent law; ignored while the Langevin law is active. */
+export function setAnhP(state, value) {
+  state.anh.atanP = Math.max(P_MIN, Math.min(P_MAX, value));
   refreshM(state);
 }
 

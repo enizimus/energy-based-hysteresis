@@ -10,11 +10,14 @@ export function createControls(root, state, onChange) {
 
   const kappas = [0, 1, 2].map((k) => q(`#kappa${k}`));
   const omegas = [0, 1, 2].map((k) => q(`#omega${k}`));
-  const hmag = q('#hmag');
+  // the drive magnitude has one slider under the analogy and one under the parameters
+  const hmags = [...root.querySelectorAll('input[data-drive="h"]')];
   const theta = q('#theta');
   const ms = q('#ms');
   const ashape = q('#ashape');
   const aName = q('#ctl-a-name');
+  const pshape = q('#pshape');
+  const pCtl = q('#ctl-p');
   const sweepBtn = q('#btn-sweep');
   const resetBtn = q('#btn-reset');
   const viewBtns = [...root.querySelectorAll('.seg-btn[data-mode]')];
@@ -30,12 +33,13 @@ export function createControls(root, state, onChange) {
   }));
   ms.addEventListener('input', () => { E.setMs(state, Number(ms.value)); onChange(); });
   ashape.addEventListener('input', () => { E.setAnhA(state, Number(ashape.value)); onChange(); });
+  pshape.addEventListener('input', () => { E.setAnhP(state, Number(pshape.value)); onChange(); });
 
-  hmag.addEventListener('input', () => {
+  hmags.forEach((input) => input.addEventListener('input', () => {
     state.sweep = null;
-    E.setDrive(state, Number(hmag.value), state.thetaDeg);
+    E.setDrive(state, Number(input.value), state.thetaDeg);
     onChange();
-  });
+  }));
   theta.addEventListener('input', () => {
     E.setDrive(state, state.s, Number(theta.value));
     onChange();
@@ -80,9 +84,14 @@ export function createControls(root, state, onChange) {
       if (document.activeElement !== ashape) ashape.value = String(anh.a);
       outOf(ashape).textContent = anh.a.toFixed(2);
       aName.textContent = anh.model === 'atan' ? 'A' : 'a';
+      pCtl.hidden = anh.model !== 'atan';          // the exponent belongs to the arctangent law only
+      if (document.activeElement !== pshape) pshape.value = String(anh.p);
+      outOf(pshape).textContent = anh.p.toFixed(2);
 
-      if (document.activeElement !== hmag) hmag.value = String(state.s);
-      outOf(hmag).textContent = state.s.toFixed(2);
+      hmags.forEach((input) => {
+        if (document.activeElement !== input) input.value = String(state.s);
+        outOf(input).textContent = state.s.toFixed(2);
+      });
       if (document.activeElement !== theta) theta.value = String(state.thetaDeg);
       outOf(theta).textContent = `${Math.round(state.thetaDeg)}°`;
       sweepBtn.textContent = state.sweep ? 'Stop sweep' : 'Sweep field';

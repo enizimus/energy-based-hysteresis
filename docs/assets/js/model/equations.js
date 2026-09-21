@@ -10,10 +10,11 @@ const ANHYSTERETIC = {
   },
   atan: {
     tex: '\\mathbf{M}_{\\mathrm{an}}(\\mathbf{H}_r) = \\frac{2M_s}{\\pi}\\arctan\\!'
-       + '\\left(\\frac{\\lVert\\mathbf{H}_r\\rVert}{A}\\right)\\hat{\\mathbf{H}}_r',
+       + '\\left(\\left(\\frac{\\lVert\\mathbf{H}_r\\rVert}{A}\\right)^{\\,p}\\right)\\hat{\\mathbf{H}}_r',
     cap: 'The reversible, single-valued <b>anhysteretic</b> response &mdash; the <b>arctangent</b> law, '
-       + 'with saturation <i>M<sub>s</sub></i> and shape parameter <i>A</i>. It approaches saturation far '
-       + 'more slowly than the Langevin law, which shows up as broader shoulders on the loop.',
+       + 'with saturation <i>M<sub>s</sub></i>, shape parameter <i>A</i> and exponent <i>p</i>. It approaches '
+       + 'saturation far more slowly than the Langevin law, which shows up as broader shoulders on the loop; '
+       + '<i>p</i> &gt; 1 sharpens the knee, <i>p</i> &lt; 1 softens it into a steep origin.',
   },
 };
 
